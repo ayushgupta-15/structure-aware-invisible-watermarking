@@ -45,7 +45,12 @@ cloud GPU (e.g. Colab) rather than locally.
 - [x] Phase 3 — structure-aware variants (local variance, edge density) — verified working:
       all three experiments (uniform / variance-driven / edge-driven) give exact payload
       recovery at ~54 dB PSNR, 0.9987 SSIM, no attack applied yet (see below)
-- [ ] Phase 4 — attack pipeline (JPEG/noise/blur + diffusion regeneration)
+- [x] Phase 4a — conventional attacks (JPEG, Gaussian noise, Gaussian blur) — verified
+      working, real comparison table across all three embedding variants (see below)
+- [ ] Phase 4b — diffusion regeneration attack — code complete (`src/phase4_diffusion_attack.py`,
+      `src/phase4_diffusion_experiment.py`), **not run yet** — needs a GPU and ~6 GB free disk
+      this machine doesn't have (6.5 GB free total; already hit a quota crisis once from a much
+      smaller download in Phase 2). Needs to run on Colab — see below.
 - [ ] Phase 5 — evaluation (PSNR/SSIM/BER/NC across all conditions)
 - [ ] Phase 6 — analysis and writeup
 
@@ -81,3 +86,43 @@ about, with an explicit per-block strength that a structure map can drive.
   basic 8-bit pixel quantization (just saving the PNG, not an attack) already
   corrupts a meaningful fraction of bits. 40+ gives exact recovery; we use 50 for
   margin. Run with `python src/phase3_experiment.py` from `code/`.
+
+## Conventional attacks (Phase 4a)
+
+`src/attacks.py` — JPEG recompression, Gaussian noise, Gaussian blur. Run the full
+comparison (all three embedding variants × all attack conditions, with PSNR/SSIM/BER)
+with `python src/phase4_conventional_experiment.py` from `code/`.
+
+Real result, one run: JPEG compression is the one conventional attack where the
+embedding variants actually differ — variance-driven embedding recovered more bits
+correctly than uniform or edge-driven at both JPEG quality levels tested (q50: BER
+0.263 vs 0.338/0.362; q30: BER 0.475 vs 0.575/0.487). Under noise, all three variants
+converge toward ~0.5 BER (random guessing) at higher noise levels — no variant
+survives that well. Under blur, all three variants perform identically, no
+differentiation at all. This is consistent with the literature we cited
+(content-adaptive embedding helps against conventional attacks like JPEG, but the
+effect isn't guaranteed to show up under every kind of conventional distortion) —
+and it's the sanity check that justifies trusting the more important, still-unrun
+diffusion-regeneration comparison below.
+
+## Diffusion regeneration attack (Phase 4b) — run on Colab, not here
+
+`src/phase4_diffusion_attack.py` implements the actual attack (SDEdit-style: add
+partial noise, run the diffusion model's denoiser, matching how Zhao et al. 2023
+and the WAVES benchmark describe this attack class). `src/phase4_diffusion_experiment.py`
+runs it against all three Phase 3 embedding variants and reports BER — this is the
+experiment the whole project's research question depends on, and it hasn't been run
+yet because this machine doesn't have the disk or GPU for it.
+
+To run on Colab:
+
+```python
+!pip install diffusers transformers accelerate torch scikit-image opencv-python-headless PyWavelets
+# upload this repo's code/ directory (or git clone it), then:
+%cd code
+!python src/phase4_diffusion_experiment.py
+```
+
+Uses a free Colab GPU runtime (T4 is enough) and Colab's own disk, not this
+machine's — no training involved, inference only, with an existing pretrained
+Stable Diffusion checkpoint (`runwayml/stable-diffusion-v1-5` by default).
