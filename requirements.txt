@@ -1,0 +1,24 @@
+# Do not `pip install -r requirements.txt` directly for this project — see the
+# "Setup" section in README.md. invisible-watermark pulls in a GPU torch build by
+# default, which can exceed disk quotas on a shared machine. Install in this order
+# instead:
+#
+#   pip install numpy opencv-python-headless scikit-image PyWavelets Pillow
+#   pip install invisible-watermark --no-deps
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#
+# This file just documents what ends up installed, for reference.
+
+# Phase 2 — baseline watermarking
+numpy
+opencv-python-headless
+scikit-image
+PyWavelets
+Pillow
+invisible-watermark   # install with --no-deps, see note above
+torch                 # install the CPU-only build, see note above
+
+# Phase 4 — diffusion regeneration attack (install later, heavier; likely on a cloud GPU)
+# diffusers
+# transformers
+# accelerate
