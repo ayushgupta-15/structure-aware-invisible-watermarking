@@ -145,8 +145,8 @@ def embed(image: np.ndarray, payload_text: str, base_strength: float,
     return out
 
 
-def extract(image: np.ndarray, num_bits: int, base_strength: float,
-            strength_map: np.ndarray | None = None) -> str:
+def extract_bits(image: np.ndarray, num_bits: int, base_strength: float,
+                  strength_map: np.ndarray | None = None) -> list[int]:
     channel = image[:, :, CHANNEL].astype(np.float32)
     LL, _ = pywt.dwt2(channel, WAVELET)
 
@@ -158,5 +158,16 @@ def extract(image: np.ndarray, num_bits: int, base_strength: float,
         strength = base_strength * (strength_map[r, c] if strength_map is not None else 1.0)
         strength = max(strength, 1e-3)
         bits.append(_extract_bit_from_block(block, strength))
+    return bits
 
-    return bits_to_text(bits)
+
+def extract(image: np.ndarray, num_bits: int, base_strength: float,
+            strength_map: np.ndarray | None = None) -> str:
+    return bits_to_text(extract_bits(image, num_bits, base_strength, strength_map))
+
+
+def bit_error_rate(original_bits: list[int], recovered_bits: list[int]) -> float:
+    """Fraction of bits that differ. 0.0 = perfect recovery, 0.5 = random guessing."""
+    assert len(original_bits) == len(recovered_bits)
+    wrong = sum(1 for a, b in zip(original_bits, recovered_bits) if a != b)
+    return wrong / len(original_bits)
