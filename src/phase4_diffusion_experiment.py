@@ -70,7 +70,7 @@ def main() -> None:
             raise FileNotFoundError(f"{path} — run phase3_experiment.py first")
 
         for regen_strength in REGENERATION_STRENGTHS:
-            regenerated = regenerate(watermarked, strength=regen_strength, device="cuda")
+            regenerated = regenerate(watermarked, strength=regen_strength)  # device=None -> auto-detect
             recovered_bits = extract_bits(regenerated, num_bits, BASE_STRENGTH, strength_map)
             ber = bit_error_rate(original_bits, recovered_bits)
             p = psnr(watermarked, regenerated)

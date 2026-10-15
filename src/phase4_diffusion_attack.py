@@ -33,20 +33,39 @@ import cv2
 import numpy as np
 
 
+def pick_device() -> str:
+    """cuda (Colab/Linux+NVIDIA) > mps (Apple Silicon) > cpu (everything else)."""
+    import torch
+
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 def regenerate(image_bgr: np.ndarray, strength: float = 0.4, steps: int = 30,
                 model_id: str = "runwayml/stable-diffusion-v1-5",
-                device: str = "cuda") -> np.ndarray:
+                device: str | None = None) -> np.ndarray:
     """
     Run one SDEdit-style regeneration pass over a BGR uint8 image.
     Requires: pip install diffusers transformers accelerate torch
+
+    device=None auto-detects: cuda > mps (Apple Silicon) > cpu.
     """
     import torch
     from diffusers import StableDiffusionImg2ImgPipeline
     from PIL import Image
 
-    pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
-        model_id, torch_dtype=torch.float16 if device == "cuda" else torch.float32,
-    )
+    if device is None:
+        device = pick_device()
+    # float16 is only reliably correct on CUDA — on MPS it can silently
+    # produce black/garbled output, and CPU doesn't support it at all.
+    dtype = torch.float16 if device == "cuda" else torch.float32
+    print(f"Using device={device}, dtype={dtype}"
+          + ("  (no GPU found — this will be slow, minutes per image)" if device == "cpu" else ""))
+
+    pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, torch_dtype=dtype)
     pipe = pipe.to(device)
     pipe.set_progress_bar_config(disable=False)
 
@@ -75,7 +94,8 @@ def main() -> None:
     parser.add_argument("--output", default="results/diffusion_regenerated.png")
     parser.add_argument("--strength", type=float, default=0.4)
     parser.add_argument("--steps", type=int, default=30)
-    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--device", default=None,
+                         help="cuda, mps, or cpu — omit to auto-detect")
     args = parser.parse_args()
 
     img = cv2.imread(args.input)
