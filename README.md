@@ -126,3 +126,20 @@ To run on Colab:
 Uses a free Colab GPU runtime (T4 is enough) and Colab's own disk, not this
 machine's — no training involved, inference only, with an existing pretrained
 Stable Diffusion checkpoint (`runwayml/stable-diffusion-v1-5` by default).
+
+**Alternative: running it on a Mac instead of Colab.** `regenerate()` auto-detects
+the best available device (`cuda` > `mps` > `cpu`), so this also works locally on
+a Mac — no flags needed:
+
+```bash
+pip install diffusers transformers accelerate torch scikit-image opencv-python-headless PyWavelets
+python src/phase4_diffusion_experiment.py
+```
+
+- **Apple Silicon (M1/M2/M3/M4):** uses the `mps` (Metal) backend — noticeably
+  faster than CPU, though not as fast as a real CUDA GPU.
+- **Intel Mac:** no GPU backend available, falls back to CPU — works, but slow
+  (minutes per image).
+- Needs roughly 6-10 GB free disk for the model + libraries, and 16 GB+ RAM is
+  recommended (8 GB will likely swap heavily).
+- Safe to run either way — worst case is slow, not harmful to the machine.
