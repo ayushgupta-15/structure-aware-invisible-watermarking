@@ -43,7 +43,7 @@ cloud GPU (e.g. Colab) rather than locally.
 - [x] Phase 3 — structure-aware variants (variance, edge density); ~53 dB PSNR, exact recovery without attack
 - [x] Phase 4a — conventional attacks (JPEG, noise, blur)
 - [x] Phase 5 — evaluation on 20 DIV2K validation images (`src/run_experiments.py`, `results/conventional_results.csv`, `results/ber_comparison.png`)
-- [ ] Phase 4b — **diffusion regeneration attack: code written, NOT yet run** (needs a GPU). Run `colab_diffusion.ipynb` on a Colab T4.
+- [x] Phase 4b — diffusion regeneration attack run on a Colab T4 (10 images, SD v1.5, strengths 0.2/0.4/0.6): `results/diffusion_results.csv`
 - [x] Phase 6 — report: `docs/final_project_report.pdf`
 
 ## Reproduce
@@ -70,7 +70,11 @@ python src/run_experiments.py --diffusion --n 10   # GPU required; or use colab_
 
 Edge-driven embedding has the lowest mean BER everywhere, but gains are modest and only
 statistically clear for some attacks; all variants are near chance at strong JPEG/noise. The
-diffusion-regeneration result (the main research question) is still pending.
+
+**Diffusion regeneration (10 images, mean BER):** every variant is at chance level at every
+strength (Uniform 0.524/0.503/0.499, Variance 0.511/0.491/0.496, Edge 0.500/0.476/0.510 for
+strength 0.2/0.4/0.6), differences are well within per-image noise. Structure-aware embedding gave
+no measurable benefit against diffusion regeneration for this classical DWT-DCT-SVD scheme.
 
 ## Baseline method (Phase 2)
 
