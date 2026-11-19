@@ -36,23 +36,41 @@ separately avoids that entirely — this machine has no GPU anyway, so CPU-only 
 is all we need until the Phase 4 diffusion attack step, which will likely run on a
 cloud GPU (e.g. Colab) rather than locally.
 
-## Phase progress
+## Status
 
 - [x] Phase 1 — literature review and scope
-- [x] Phase 2 — baseline implementation (DwtDctSvd embed/extract, sanity check) — verified working:
-      37.56 dB PSNR, 0.9717 SSIM, exact payload recovery on a real photographic test image
-      (no attack applied yet — this is the pre-attack sanity check only)
-- [x] Phase 3 — structure-aware variants (local variance, edge density) — verified working:
-      all three experiments (uniform / variance-driven / edge-driven) give exact payload
-      recovery at ~54 dB PSNR, 0.9987 SSIM, no attack applied yet (see below)
-- [x] Phase 4a — conventional attacks (JPEG, Gaussian noise, Gaussian blur) — verified
-      working, real comparison table across all three embedding variants (see below)
-- [ ] Phase 4b — diffusion regeneration attack — code complete (`src/phase4_diffusion_attack.py`,
-      `src/phase4_diffusion_experiment.py`), **not run yet** — needs a GPU and ~6 GB free disk
-      this machine doesn't have (6.5 GB free total; already hit a quota crisis once from a much
-      smaller download in Phase 2). Needs to run on Colab — see below.
-- [ ] Phase 5 — evaluation (PSNR/SSIM/BER/NC across all conditions)
-- [ ] Phase 6 — analysis and writeup
+- [x] Phase 2 — baseline DwtDctSvd sanity check (37.56 dB PSNR, exact recovery)
+- [x] Phase 3 — structure-aware variants (variance, edge density); ~53 dB PSNR, exact recovery without attack
+- [x] Phase 4a — conventional attacks (JPEG, noise, blur)
+- [x] Phase 5 — evaluation on 20 DIV2K validation images (`src/run_experiments.py`, `results/conventional_results.csv`, `results/ber_comparison.png`)
+- [ ] Phase 4b — **diffusion regeneration attack: code written, NOT yet run** (needs a GPU). Run `colab_diffusion.ipynb` on a Colab T4.
+- [x] Phase 6 — report: `docs/final_project_report.pdf`
+
+## Reproduce
+
+```bash
+python3 -m venv venv && source venv/bin/activate   # see Setup below for install order
+python src/prepare_dataset.py --n 20               # downloads DIV2K valid (450 MB), crops 20 images
+python src/run_experiments.py                      # conventional attacks -> results/conventional_results.csv
+python src/make_figures.py                         # needs matplotlib
+python src/run_experiments.py --diffusion --n 10   # GPU required; or use colab_diffusion.ipynb
+```
+
+## Results (20 DIV2K images, 80-bit payload, mean BER, lower is better)
+
+| Attack | Uniform | Variance | Edge |
+|---|---|---|---|
+| None | 0.000 | 0.000 | 0.000 |
+| JPEG q50 | 0.413 | 0.401 | 0.353 |
+| JPEG q30 | 0.499 | 0.505 | 0.471 |
+| Noise s=10 | 0.553 | 0.517 | 0.471 |
+| Noise s=20 | 0.519 | 0.533 | 0.489 |
+| Blur k=5 | 0.193 | 0.189 | 0.149 |
+| Blur k=7 | 0.296 | 0.282 | 0.274 |
+
+Edge-driven embedding has the lowest mean BER everywhere, but gains are modest and only
+statistically clear for some attacks; all variants are near chance at strong JPEG/noise. The
+diffusion-regeneration result (the main research question) is still pending.
 
 ## Baseline method (Phase 2)
 

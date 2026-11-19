@@ -33,6 +33,9 @@ import cv2
 import numpy as np
 
 
+_PIPE_CACHE: dict = {}
+
+
 def pick_device() -> str:
     """cuda (Colab/Linux+NVIDIA) > mps (Apple Silicon) > cpu (everything else)."""
     import torch
@@ -65,9 +68,14 @@ def regenerate(image_bgr: np.ndarray, strength: float = 0.4, steps: int = 30,
     print(f"Using device={device}, dtype={dtype}"
           + ("  (no GPU found — this will be slow, minutes per image)" if device == "cpu" else ""))
 
-    pipe = StableDiffusionImg2ImgPipeline.from_pretrained(model_id, torch_dtype=dtype)
-    pipe = pipe.to(device)
-    pipe.set_progress_bar_config(disable=False)
+    key = (model_id, device)
+    if key not in _PIPE_CACHE:  # load once, reuse across calls
+        pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
+            model_id, torch_dtype=dtype, safety_checker=None)
+        pipe = pipe.to(device)
+        pipe.set_progress_bar_config(disable=True)
+        _PIPE_CACHE[key] = pipe
+    pipe = _PIPE_CACHE[key]
 
     image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
     pil_image = Image.fromarray(image_rgb).resize((512, 512))
