@@ -42,7 +42,7 @@ cloud GPU (e.g. Colab) rather than locally.
 - [x] Phase 2 — baseline DwtDctSvd sanity check (37.56 dB PSNR, exact recovery)
 - [x] Phase 3 — structure-aware variants (variance, edge density); ~53 dB PSNR, exact recovery without attack
 - [x] Phase 4a — conventional attacks (JPEG, noise, blur)
-- [x] Phase 5 — evaluation on 20 DIV2K validation images (`src/run_experiments.py`, `results/conventional_results.csv`, `results/ber_comparison.png`)
+- [x] Phase 5 — evaluation on all 100 DIV2K validation images (`src/run_experiments.py`, `results/conventional_results.csv`, `results/ber_comparison.png`)
 - [x] Phase 4b — diffusion regeneration attack run on a Colab T4 (10 images, SD v1.5, strengths 0.2/0.4/0.6): `results/diffusion_results.csv`
 - [x] Phase 6 — report: `docs/final_project_report.pdf`
 
@@ -50,26 +50,27 @@ cloud GPU (e.g. Colab) rather than locally.
 
 ```bash
 python3 -m venv venv && source venv/bin/activate   # see Setup below for install order
-python src/prepare_dataset.py --n 20               # downloads DIV2K valid (450 MB), crops 20 images
-python src/run_experiments.py                      # conventional attacks -> results/conventional_results.csv
+python src/prepare_dataset.py --n 100 --out data/div2k_all   # downloads DIV2K valid (450 MB), crops all 100
+python src/run_experiments.py --data data/div2k_all          # conventional attacks -> results/conventional_results.csv
 python src/make_figures.py                         # needs matplotlib
 python src/run_experiments.py --diffusion --n 10   # GPU required; or use colab_diffusion.ipynb
 ```
 
-## Results (20 DIV2K images, 80-bit payload, mean BER, lower is better)
+## Results (all 100 DIV2K validation images, 80-bit payload, mean BER, lower is better)
 
 | Attack | Uniform | Variance | Edge |
 |---|---|---|---|
-| None | 0.000 | 0.000 | 0.000 |
-| JPEG q50 | 0.413 | 0.401 | 0.353 |
-| JPEG q30 | 0.499 | 0.505 | 0.471 |
-| Noise s=10 | 0.553 | 0.517 | 0.471 |
-| Noise s=20 | 0.519 | 0.533 | 0.489 |
-| Blur k=5 | 0.193 | 0.189 | 0.149 |
-| Blur k=7 | 0.296 | 0.282 | 0.274 |
+| None | 0.007 | 0.006 | 0.006 |
+| JPEG q50 | 0.424 | 0.401 | 0.374 |
+| JPEG q30 | 0.492 | 0.488 | 0.467 |
+| Noise s=10 | 0.538 | 0.493 | 0.446 |
+| Noise s=20 | 0.511 | 0.496 | 0.454 |
+| Blur k=5 | 0.228 | 0.221 | 0.192 |
+| Blur k=7 | 0.290 | 0.296 | 0.293 |
 
-Edge-driven embedding has the lowest mean BER everywhere, but gains are modest and only
-statistically clear for some attacks; all variants are near chance at strong JPEG/noise. The
+Edge-driven embedding gives a small but statistically clear BER reduction under JPEG, noise and
+blur k=5 (paired, beyond 2 s.e.m.); no variant helps at blur k=7. Without any attack 7 of 100 images
+show some bit errors (2 of them badly: 0839, 0852; cause not diagnosed). All variants are near chance at strong JPEG/noise.
 
 **Diffusion regeneration (10 images, mean BER):** every variant is at chance level at every
 strength (Uniform 0.524/0.503/0.499, Variance 0.511/0.491/0.496, Edge 0.500/0.476/0.510 for

@@ -31,6 +31,8 @@ def main() -> None:
     ap.add_argument("--zip", default=None)
     ap.add_argument("--n", type=int, default=20)
     ap.add_argument("--out", default="data/div2k")
+    ap.add_argument("--random-seed", type=int, default=None,
+                    help="pick --n images at random with this seed instead of the first n")
     args = ap.parse_args()
 
     zpath = args.zip
@@ -41,7 +43,12 @@ def main() -> None:
 
     os.makedirs(args.out, exist_ok=True)
     with zipfile.ZipFile(zpath) as z:
-        names = sorted(n for n in z.namelist() if n.lower().endswith(".png"))[:args.n]
+        names = sorted(n for n in z.namelist() if n.lower().endswith(".png"))
+        if args.random_seed is not None:
+            import random
+            names = sorted(random.Random(args.random_seed).sample(names, args.n))
+        else:
+            names = names[:args.n]
         for name in names:
             data = np.frombuffer(z.read(name), np.uint8)
             img = cv2.imdecode(data, cv2.IMREAD_COLOR)

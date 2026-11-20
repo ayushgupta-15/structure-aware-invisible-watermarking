@@ -29,6 +29,6 @@ for i, v in enumerate(variants):
 ax.axhline(0.5, color="k", ls="--", lw=0.8); ax.text(len(attacks) - 0.5, 0.51, "random guess", ha="right", fontsize=8)
 ax.set_xticks(x); ax.set_xticklabels(attacks, rotation=20, ha="right")
 ax.set_ylabel("Mean BER (lower = better)"); ax.set_ylim(0, 0.7); ax.legend(frameon=False)
-ax.set_title("Watermark bit error rate by attack (20 images conventional, 10 diffusion; error bars = s.e.m.)", fontsize=10)
+ax.set_title("Watermark bit error rate by attack (100 images conventional, 10 diffusion; error bars = s.e.m.)", fontsize=10)
 fig.tight_layout(); fig.savefig("results/ber_comparison.png", dpi=170)
 print("saved results/ber_comparison.png")
